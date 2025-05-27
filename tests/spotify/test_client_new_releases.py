@@ -1,8 +1,8 @@
 import httpx
 import pytest
 
-from api_testing_framework.client import APIClient
-from api_testing_framework.models import NewReleasesResponse
+from api_testing_framework.spotify.client import SpotifyClient
+from api_testing_framework.spotify.models import NewReleasesResponse
 
 
 class DummyNewReleasesTransport(httpx.BaseTransport):
@@ -40,12 +40,13 @@ class DummyNewReleasesTransport(httpx.BaseTransport):
 
     @pytest.fixture
     def client():
-        transport = DummyNewReleasesTransport()
-        return APIClient(
-            base_url="https://api.example.com", token="dummy-token", transport=transport
+        return SpotifyClient(
+            base_url="https://api.example.com",
+            token="dummy-token",
+            transport=DummyNewReleasesTransport(),
         )
 
-    def test_get_new_releases_returns_valid_model(client: APIClient):
+    def test_get_new_releases_returns_valid_model(client: SpotifyClient):
         result = client.get_new_releases(limit=1)
         assert isinstance(result, NewReleasesResponse)
         album = result.albums.items[0]

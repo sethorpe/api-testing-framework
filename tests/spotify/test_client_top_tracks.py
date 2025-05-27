@@ -1,8 +1,8 @@
 import httpx
 import pytest
 
-from api_testing_framework.client import APIClient
-from api_testing_framework.models import TopTracksResponse
+from api_testing_framework.spotify.client import SpotifyClient
+from api_testing_framework.spotify.models import TopTracksResponse
 
 
 class DummyTopTracksTransport(httpx.BaseTransport):
@@ -35,13 +35,13 @@ class DummyTopTracksTransport(httpx.BaseTransport):
 
     @pytest.fixture
     def client():
-        return APIClient(
+        return SpotifyClient(
             base_url="https://api.example.com",
             token="dummy-token",
             transport=DummyTopTracksTransport(),
         )
 
-    def test_get_artist_top_tracks(client: APIClient):
+    def test_get_artist_top_tracks(client: SpotifyClient):
         resp = client.get_artist_top_tracks("artist123", market="US")
         assert isinstance(resp, TopTracksResponse)
         assert resp.tracks[0].id == "trk1"
