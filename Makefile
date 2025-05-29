@@ -2,7 +2,7 @@
 
 # Install project dependencies without installing the root package
 install:
-	poetry install --no-root
+	poetry install
 
 # Run code style and lint checks
 lint:

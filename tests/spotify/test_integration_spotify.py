@@ -1,6 +1,6 @@
 import pytest
 
-from src.api_testing_framework.spotify.client import SpotifyClient
+from api_testing_framework.spotify.client import SpotifyClient
 
 
 @pytest.mark.integration
