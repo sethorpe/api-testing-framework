@@ -12,11 +12,11 @@ lint:
 
 # Run unit tests
 test:
-	pytest
+	poetry run pytest
 
 # Generate Allure results and HTML report
 report:
-	pytest --alluredir=allure-results
+	poetry run pytest --alluredir=allure-results
 	allure generate allure-results --clean -o allure-report
 
 # Serve the Allure report interactively
