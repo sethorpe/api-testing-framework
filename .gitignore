@@ -4,3 +4,7 @@ __pycache__/
 .pytest_cache/
 .env
 .vscode/settings.json
+
+# Ignore Allure results and reports
+allure-results/
+allure-report/
