@@ -12,6 +12,10 @@ jobs:
         name: Test & Report
         runs-on: ubuntu-latest
 
+        env:
+            SPOTIFY_API_BASE_URL: ${{ vars.SPOTIFY_API_BASE_URL }}
+            SPOTIFY_CLIENT_ID: ${{ vars.SPOTIFY_CLIENT_ID }}
+            SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
         steps:
             - name: Checkout code
               uses: actions/checkout@v3
