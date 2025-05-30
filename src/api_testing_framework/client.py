@@ -1,6 +1,12 @@
 from typing import Any, Dict, Optional
 
 import httpx
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from api_testing_framework.exceptions import APIError
 
@@ -52,12 +58,26 @@ class APIClient:
             raise APIError(response.status_code, data.get("error", response.text), data)
         return data
 
+    @retry(
+        reraise=True,
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception_type(APIError),
+    )
     def get(self, path: str, params: Dict[str, Any] = None) -> dict:
+        """GET with retries on APIError"""
         self._refresh_token_if_needed()
         resp = self._client.get(path, params=params)
         return self._handle_response(resp)
 
+    @retry(
+        reraise=True,
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception_type(APIError),
+    )
     def post(self, path: str, json: Dict[str, Any] = None) -> dict:
+        """POST with retries on APIError"""
         self._refresh_token_if_needed()
         resp = self._client.post(path, json=json)
         return self._handle_response(resp)
