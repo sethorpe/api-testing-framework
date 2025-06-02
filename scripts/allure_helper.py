@@ -46,7 +46,7 @@ def serve_allure_report(results_dir: str) -> None:
 
 
 def main():
-    project_root = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     parser = argparse.ArgumentParser(
         description="Clean, generate, and serve Allure reports."
     )

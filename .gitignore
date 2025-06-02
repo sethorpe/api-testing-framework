@@ -4,6 +4,7 @@ __pycache__/
 .pytest_cache/
 .env
 .vscode/settings.json
+.DS_Store
 
 # Ignore Allure results and reports
 allure-results/

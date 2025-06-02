@@ -57,7 +57,7 @@ class SpotifyClient(APIClient):
         """
         Fetch new album releases from Spotify and return a validated model.
         """
-        raw = self.get(f"/browse/new-releases?limit={limit}")
+        raw = self.get(f"/browse/new-releases?limit={limit}", attach=False)
         return NewReleasesResponse.model_validate(raw)
 
     def get_artist_top_tracks(
@@ -66,5 +66,5 @@ class SpotifyClient(APIClient):
         """
         Fetch the top tracks for a given artist in the specified market.
         """
-        raw = self.get(f"/artists/{artist_id}/top-tracks?market={market}")
+        raw = self.get(f"/artists/{artist_id}/top-tracks?market={market}", attach=False)
         return TopTracksResponse.model_validate(raw)
