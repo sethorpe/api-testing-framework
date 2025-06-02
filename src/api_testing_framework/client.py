@@ -3,6 +3,12 @@ from typing import Any, Dict, Optional
 import allure
 import httpx
 from httpx import Request, Response
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from api_testing_framework.exceptions import APIError
 
@@ -125,6 +131,12 @@ class APIClient:
         """Store the outgoing Request object for later attachment."""
         self._last_request = request
 
+    @retry(
+        reraise=True,
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception_type(APIError),
+    )
     def get(
         self, path: str, params: Dict[str, Any] = None, *, attach: bool = False
     ) -> dict:
@@ -156,6 +168,12 @@ class APIClient:
             self._attach_last_exchange_to_allure()
         return data
 
+    @retry(
+        reraise=True,
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=10),
+        retry=retry_if_exception_type(APIError),
+    )
     def post(
         self, path: str, json: Dict[str, Any] = None, *, attach: bool = False
     ) -> dict:
