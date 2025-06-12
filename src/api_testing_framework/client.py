@@ -1,8 +1,9 @@
+import json
+import os
 from typing import Any, Dict, Optional
 
 import allure
 import httpx
-from httpx import Request, Response
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -62,6 +63,43 @@ class APIClient:
             raise APIError(response.status_code, data.get("error", response.text), data)
         return data
 
+    def _record_request(self, request: httpx.Request) -> None:
+        """Store the outgoing Request object for later attachment."""
+        self._last_request = request
+
+    def _sanitize_payload(self, raw_text: str) -> tuple[str, Any]:
+        """
+        Truncate and redact JSON paloads based on env settings
+        """
+        max_chars = int(os.getenv("MAX_PAYLOAD_CHARS", "5120"))
+        redact_keys = set(
+            filter(None, os.getenv("REDACT_FIELDS", "access_token,password").split(","))
+        )
+
+        # Truncate
+        text = raw_text
+        if len(text) > max_chars:
+            text = text[:max_chars] + "\n\n<truncated>"
+
+        # Attempt JSON parse and redact
+        try:
+            parsed = json.loads(text)
+
+            def _red(o):
+                if isinstance(o, dict):
+                    return {
+                        k: ("***REDACTED***" if k in redact_keys else _red(v))
+                        for k, v in o.items()
+                    }
+                if isinstance(o, list):
+                    return [_red(i) for i in o]
+                return o
+
+            sanitized = json.dumps(_red(parsed), indent=2)
+            return sanitized, allure.attachment_type.JSON
+        except Exception:
+            return text, allure.attachment_type.TEXT
+
     def _attach_last_exchange_to_allure(self) -> None:
         """
         Attach the most recent httpx.Request and httpx.Response
@@ -85,18 +123,12 @@ class APIClient:
         )
 
         # Attach request body
-        if request.content:
+        if self._last_request.content:
             try:
-                body_text = request.content.decode("utf-8")
-                atype = (
-                    allure.attachment_type.JSON
-                    if body_text.strip().startswith("{")
-                    else allure.attachment_type.TEXT
-                )
+                raw_body = self._last_request.content.decode("utf-8", errors="ignore")
             except Exception:
-                body_text = "<binary_content>"
-                atype = allure.attachment_type.TEXT
-
+                raw_body = "<binary content>"
+            body_text, atype = self._sanitize_payload(raw_body)
             allure.attach(body_text, name="Request Body", attachment_type=atype)
 
         # Attach response status
@@ -116,20 +148,9 @@ class APIClient:
         )
 
         # Attach response body
-        response_text = response.text or ""
-        try:
-            import json
-
-            json.loads(response_text)
-            atype = allure.attachment_type.JSON
-        except Exception:
-            atype = allure.attachment_type.TEXT
-
+        raw_response = response.text or ""
+        response_text, atype = self._sanitize_payload(raw_response)
         allure.attach(response_text, name="Response Body", attachment_type=atype)
-
-    def _record_request(self, request: httpx.Request) -> None:
-        """Store the outgoing Request object for later attachment."""
-        self._last_request = request
 
     @retry(
         reraise=True,
