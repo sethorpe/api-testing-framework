@@ -158,131 +158,86 @@ class APIClient:
         wait=wait_exponential(multiplier=1, min=1, max=10),
         retry=retry_if_exception_type(APIError),
     )
+    def _request(
+        self,
+        method: str,
+        path: str,
+        params: Optional[Dict[str, Any]] = None,
+        json: Optional[Dict[str, Any]] = None,
+        *,
+        attach: bool = False,
+    ) -> dict:
+        """
+        Generic HTTP request handler with retry, token refresh, and Allure attachment.
+
+        Args:
+            method: HTTP method (GET, POST, PUT, DELETE, etc.)
+            path: URL path relative to base_url
+            params: Query parameters for the request
+            json: JSON body for the request
+            attach: If True, attach request/response to Allure report
+
+        Returns:
+            Parsed JSON response as dict
+
+        Raises:
+            APIError: If the response status indicates an error
+        """
+        self._refresh_token_if_needed()
+
+        # Build request with appropriate parameters
+        request = self._client.build_request(method, path, params=params, json=json)
+        if attach:
+            self._record_request(request)
+
+        # Send and record response
+        response = self._client.send(request)
+        if attach:
+            self._last_response = response
+
+        # Handle status; if it errors, attach before raising
+        try:
+            data = self._handle_response(response)
+        except APIError:
+            if attach:
+                self._attach_last_exchange_to_allure()
+            raise
+
+        # On success, attach if requested
+        if attach:
+            self._attach_last_exchange_to_allure()
+        return data
+
     def get(
-        self, path: str, params: Dict[str, Any] = None, *, attach: bool = False
+        self,
+        path: str,
+        params: Optional[Dict[str, Any]] = None,
+        *,
+        attach: bool = False,
     ) -> dict:
         """
         GET request; if attach=True, record & attach the request/response in Allure
         """
-        self._refresh_token_if_needed()
+        return self._request("GET", path, params=params, attach=attach)
 
-        # Build request
-        request = self._client.build_request("GET", path, params=params)
-        if attach:
-            self._record_request(request)
-
-        # Send and record response
-        response = self._client.send(request)
-        if attach:
-            self._last_response = response
-
-        # Handle status; if it errors, attach before raising
-        try:
-            data = self._handle_response(response)
-        except APIError:
-            if attach:
-                self._attach_last_exchange_to_allure()
-            raise
-
-        # On success, attach if requested
-        if attach:
-            self._attach_last_exchange_to_allure()
-        return data
-
-    @retry(
-        reraise=True,
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type(APIError),
-    )
     def post(
-        self, path: str, json: Dict[str, Any] = None, *, attach: bool = False
+        self, path: str, json: Optional[Dict[str, Any]] = None, *, attach: bool = False
     ) -> dict:
         """
         POST request; if attach=True, record & attach the request/response in Allure
         """
-        self._refresh_token_if_needed()
-
-        # Build request
-        request = self._client.build_request("POST", path, json=json)
-        if attach:
-            self._record_request(request)
-
-        # Send and record response
-        response = self._client.send(request)
-        if attach:
-            self._last_response = response
-
-        # Handle status; if errors, attach before raising
-        try:
-            data = self._handle_response(response)
-        except APIError:
-            if attach:
-                self._attach_last_exchange_to_allure()
-            raise
-
-        # On success, attach if requested
-        if attach:
-            self._attach_last_exchange_to_allure()
-        return data
+        return self._request("POST", path, json=json, attach=attach)
 
     def put(
-        self, path: str, json: Dict[str, Any] = None, *, attach: bool = False
+        self, path: str, json: Optional[Dict[str, Any]] = None, *, attach: bool = False
     ) -> dict:
         """
-        PUT request; if attach=True, record & attach the request/response in Allure.
+        PUT request; if attach=True, record & attach the request/response in Allure
         """
-        self._refresh_token_if_needed()
-
-        # Build the request
-        request = self._client.build_request("PUT", path, json=json)
-        if attach:
-            self._record_request(request)
-
-        # Send and record response
-        response = self._client.send(request)
-        if attach:
-            self._last_response = response
-
-        # Handle status; if it errors, attach before raising
-        try:
-            data = self._handle_response(response)
-        except APIError:
-            if attach:
-                self._attach_last_exchange_to_allure()
-            raise
-
-        # On success, attach if requested
-        if attach:
-            self._attach_last_exchange_to_allure()
-        return data
+        return self._request("PUT", path, json=json, attach=attach)
 
     def delete(self, path: str, *, attach: bool = False) -> dict:
         """
-        DELETE request; if attach=True, record & attach the request/response in Allure.
+        DELETE request; if attach=True, record & attach the request/response in Allure
         """
-
-        self._refresh_token_if_needed()
-
-        # Build request
-        request = self._client.build_request("DELETE", path)
-        if attach:
-            self._record_request(request)
-
-        # Send and record response
-        response = self._client.send(request)
-        if attach:
-            self._last_response = response
-
-        # Handle status; if it errors, attach before raising
-        try:
-            data = self._handle_response(response)
-        except APIError:
-            if attach:
-                self._attach_last_exchange_to_allure()
-            raise
-
-        # On success, attach if requested
-        if attach:
-            self._attach_last_exchange_to_allure()
-        return data
+        return self._request("DELETE", path, attach=attach)

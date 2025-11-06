@@ -3,13 +3,10 @@ from typing import Optional
 
 import httpx
 
-from src.api_testing_framework.auth import fetch_spotify_token
-from src.api_testing_framework.client import APIClient
-from src.api_testing_framework.config import get_settings
-from src.api_testing_framework.spotify.models import (
-    NewReleasesResponse,
-    TopTracksResponse,
-)
+from api_testing_framework.auth import fetch_spotify_token
+from api_testing_framework.client import APIClient
+from api_testing_framework.config import get_settings
+from api_testing_framework.spotify.models import NewReleasesResponse, TopTracksResponse
 
 
 class SpotifyClient(APIClient):
@@ -53,18 +50,22 @@ class SpotifyClient(APIClient):
             self._token_expires_at = time.time() + expires_in - 10
             self._client.headers["Authorization"] = f"Bearer {self._token}"
 
-    def get_new_releases(self, limit: int = 20) -> NewReleasesResponse:
+    def get_new_releases(
+        self, limit: int = 20, *, attach: bool = False
+    ) -> NewReleasesResponse:
         """
         Fetch new album releases from Spotify and return a validated model.
         """
-        raw = self.get(f"/browse/new-releases?limit={limit}", attach=False)
+        raw = self.get(f"/browse/new-releases?limit={limit}", attach=attach)
         return NewReleasesResponse.model_validate(raw)
 
     def get_artist_top_tracks(
-        self, artist_id: str, market: str = "US"
+        self, artist_id: str, market: str = "US", *, attach: bool = False
     ) -> TopTracksResponse:
         """
         Fetch the top tracks for a given artist in the specified market.
         """
-        raw = self.get(f"/artists/{artist_id}/top-tracks?market={market}", attach=False)
+        raw = self.get(
+            f"/artists/{artist_id}/top-tracks?market={market}", attach=attach
+        )
         return TopTracksResponse.model_validate(raw)
