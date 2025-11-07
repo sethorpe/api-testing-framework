@@ -26,7 +26,7 @@ def fetch_spotify_token(client_id: str, client_secret: str) -> tuple[str, int]:
         try:
             err = resp.json()
         except ValueError:
-            err - resp.text
+            err = resp.text
         raise RuntimeError(f"Spotify token fetch failed ({resp.status_code}): {err!r}")
     body = resp.json()
     return body["access_token"], body["expires_in"]
