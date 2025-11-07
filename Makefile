@@ -24,7 +24,7 @@ report:
 
 # Serve the Allure report interactively
 serve-report:
-	python scripts/allure_helper.py --serve
+	poetry run python scripts/allure_helper.py --serve
 
 # Clean test artifacts and reports
 clean:

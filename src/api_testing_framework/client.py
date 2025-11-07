@@ -175,35 +175,43 @@ class APIClient:
             path: URL path relative to base_url
             params: Query parameters for the request
             json: JSON body for the request
-            attach: If True, attach request/response to Allure report
+            attach: If True, attach request/response to Allure report immediately
 
         Returns:
             Parsed JSON response as dict
 
         Raises:
             APIError: If the response status indicates an error
+
+        Environment Variables:
+            ATTACH_ON_FAILURE: If "true", records request/response for all calls.
+                              Pytest hook can then attach on test failure.
         """
         self._refresh_token_if_needed()
 
+        # Check if we should record for later attachment (ATTACH_ON_FAILURE mode)
+        attach_on_failure = os.getenv("ATTACH_ON_FAILURE", "").lower() == "true"
+        should_record = attach or attach_on_failure
+
         # Build request with appropriate parameters
         request = self._client.build_request(method, path, params=params, json=json)
-        if attach:
+        if should_record:
             self._record_request(request)
 
         # Send and record response
         response = self._client.send(request)
-        if attach:
+        if should_record:
             self._last_response = response
 
-        # Handle status; if it errors, attach before raising
+        # Handle status; if it errors, attach ONLY if explicit attach=True
         try:
             data = self._handle_response(response)
         except APIError:
-            if attach:
+            if attach:  # Only attach immediately if explicitly requested
                 self._attach_last_exchange_to_allure()
-            raise
+            raise  # Pytest hook will handle attachment if ATTACH_ON_FAILURE=true
 
-        # On success, attach if requested
+        # On success, attach ONLY if explicit attach=True
         if attach:
             self._attach_last_exchange_to_allure()
         return data
