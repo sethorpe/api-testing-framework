@@ -14,9 +14,12 @@ lint:
 test:
 	poetry run pytest
 
+# Run tests *with* Allure result output (only writes results)
+results:
+	poetry run pytest --maxfail=1 --disable-warnings --alluredir=allure-results
+
 # Generate Allure results and HTML report
 report:
-	poetry run pytest --alluredir=allure-results
 	allure generate allure-results --clean -o allure-report
 
 # Serve the Allure report interactively
@@ -28,4 +31,4 @@ clean:
 	rm -rf .pytest_cache/ allure-results/ allure-report/
 
 # Full flow: clean state, install, lint, test, and report
-all: clean install test report
+all: clean install results report
