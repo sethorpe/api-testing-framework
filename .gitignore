@@ -9,3 +9,8 @@ __pycache__/
 # Ignore Allure results and reports
 allure-results/
 allure-report/
+
+# specgen quarantine: generated tests stay untracked until reviewed and
+# promoted to tests/curated/ (see evaluation/EVALUATION.md)
+tests/generated/*.py
+tests/generated/generation_report.*
